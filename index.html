@@ -3,37 +3,104 @@
 <meta charset="UTF-8">
 <title>Membrane Fluidity Simulation</title>
 <style>
-body{margin:0;background:#0b1a2a;color:white;font-family:Arial}
-canvas{display:block;margin:auto;background:#0f2b45}
-h1{text-align:center}
+body{margin:0;background:#061521;color:white;font-family:Arial;text-align:center}
+h1{margin:10px}
+canvas{background:#0e2f4d;border:2px solid #ffffff;display:block;margin:auto}
 </style>
 </head>
 <body>
-<h1>Phospholipid Membrane Fluidity Simulation</h1>
-<canvas id="membrane" width="900" height="450"></canvas>
+<h1>Real‑Time Cell Membrane Fluidity Simulation</h1>
+<p>Phospholipids move laterally demonstrating the fluid mosaic model</p><canvas id="membrane" width="900" height="420"></canvas>
+
 <script>
 const canvas=document.getElementById("membrane");
-const ctx=canvas.getContext("2d");const lipids=[]; const proteins=[]; const chol=[];
+const ctx=canvas.getContext("2d");
 
-class Lipid{ constructor(x,y){ this.x=x;this.y=y; this.vx=(Math.random()-0.5)0.8; } move(){ this.x+=this.vx; if(this.x<0||this.x>canvas.width)this.vx=-1; } draw(){ ctx.fillStyle="#8fd3ff"; ctx.beginPath(); ctx.arc(this.x,this.y,5,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#ffd27f"; ctx.beginPath(); ctx.moveTo(this.x,this.y); ctx.lineTo(this.x,this.y+18); ctx.stroke(); } }
+class Lipid{
+ constructor(x,y,dir){
+  this.x=x
+  this.y=y
+  this.dir=dir
+  this.vx=(Math.random()-0.5)*1.2
+ }
+ move(){
+  this.x+=this.vx
+  if(this.x<0||this.x>canvas.width){this.vx*=-1}
+ }
+ draw(){
+  ctx.fillStyle="#7fd3ff"
+  ctx.beginPath()
+  ctx.arc(this.x,this.y,6,0,Math.PI*2)
+  ctx.fill()
 
-class Protein{ constructor(x,y){this.x=x;this.y=y} move(){this.x+=Math.sin(Date.now()/600)/5} draw(){ ctx.fillStyle="#b084ff"; ctx.fillRect(this.x-10,this.y-30,20,60); } }
+  ctx.strokeStyle="#ffd27f"
+  ctx.lineWidth=2
+  ctx.beginPath()
+  ctx.moveTo(this.x,this.y)
+  ctx.lineTo(this.x,this.y+20*this.dir)
+  ctx.stroke()
+ }
+}
 
-class Cholesterol{ constructor(x,y){this.x=x;this.y=y} move(){this.x+=Math.sin(Date.now()/800)/10} draw(){ ctx.fillStyle="#f7d94c"; ctx.fillRect(this.x-3,this.y-10,6,20); } }
+class Protein{
+ constructor(x){
+  this.x=x
+ }
+ move(){
+  this.x+=Math.sin(Date.now()/500)/3
+ }
+ draw(){
+  ctx.fillStyle="#b084ff"
+  ctx.fillRect(this.x-12,170,24,80)
+ }
+}
 
-for(let i=0;i<140;i++){ let y=i%2==0?160:290; lipids.push(new Lipid(Math.random()*900,y)); }
+class Cholesterol{
+ constructor(x,y){
+  this.x=x
+  this.y=y
+ }
+ move(){
+  this.x+=Math.sin(Date.now()/700)/4
+ }
+ draw(){
+  ctx.fillStyle="#ffd94a"
+  ctx.fillRect(this.x-3,this.y-8,6,16)
+ }
+}
 
-for(let i=0;i<6;i++){ proteins.push(new Protein(Math.random()*900,225)); }
+const lipids=[]
+const proteins=[]
+const chol=[]
 
-for(let i=0;i<25;i++){ chol.push(new Cholesterol(Math.random()*900,225)); }
+for(let i=0;i<80;i++){
+ lipids.push(new Lipid(Math.random()*900,150,1))
+ lipids.push(new Lipid(Math.random()*900,270,-1))
+}
 
-function animate(){ ctx.clearRect(0,0,canvas.width,canvas.height);
+for(let i=0;i<6;i++){
+ proteins.push(new Protein(Math.random()*900))
+}
 
-lipids.forEach(l=>{l.move();l.draw();}); proteins.forEach(p=>{p.move();p.draw();}); chol.forEach(c=>{c.move();c.draw();});
+for(let i=0;i<30;i++){
+ chol.push(new Cholesterol(Math.random()*900,210))
+}
 
-requestAnimationFrame(animate); }
+function animate(){
+ ctx.clearRect(0,0,canvas.width,canvas.height)
 
-animate(); </script>
+ lipids.forEach(l=>{l.move();l.draw()})
+ proteins.forEach(p=>{p.move();p.draw()})
+ chol.forEach(c=>{c.move();c.draw()})
 
-</body>
+ ctx.fillStyle="white"
+ ctx.font="14px Arial"
+ ctx.fillText("Phospholipid heads",20,140)
+ ctx.fillText("Hydrophobic tails",20,310)
+
+ requestAnimationFrame(animate)
+}
+
+animate()
+</script></body>
 </html>
