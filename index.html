@@ -2,16 +2,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cell Membrane Biochemistry Simulation</title>
+<title>Plasma Membrane Simulation</title>
 <style>
-body{margin:0;background:#071a2c;color:white;font-family:Arial;text-align:center}
+body{margin:0;background:#061a2b;color:white;font-family:Arial;text-align:center}
 h2{margin:6px}
-canvas{background:#0e2f4d;border:2px solid white;display:block;margin:auto;width:96vw;height:72vh}
+canvas{background:#0d2f4d;border:2px solid white;display:block;margin:auto;width:96vw;height:72vh}
 </style>
 </head>
-<body><h2>Plasma Membrane – Fluid Mosaic Model (Biochemistry Simulation)</h2><canvas id="membrane"></canvas>
-
-<script>
+<body><h2>Plasma Membrane – Fluid Mosaic Biochemistry Simulation</h2>
+<canvas id="membrane"></canvas><script>
 const canvas=document.getElementById("membrane")
 const ctx=canvas.getContext("2d")
 
@@ -33,15 +32,13 @@ class Phospholipid{
  }
 
  move(){
-  this.x+=(Math.random()-0.5)*1.4
-  this.y+=(Math.random()-0.5)*0.15
-
+  this.x+=(Math.random()-0.5)*1.2
   if(this.x<0)this.x=canvas.width
   if(this.x>canvas.width)this.x=0
  }
 
  draw(){
-  ctx.fillStyle="#7fd3ff"
+  ctx.fillStyle="#6fd3ff"
   ctx.beginPath()
   ctx.arc(this.x,this.y,5,0,Math.PI*2)
   ctx.fill()
@@ -51,75 +48,231 @@ class Phospholipid{
 
   ctx.beginPath()
   ctx.moveTo(this.x,this.y)
-  ctx.lineTo(this.x,this.y+18*this.dir)
+  ctx.lineTo(this.x,this.y+20*this.dir)
   ctx.moveTo(this.x,this.y)
-  ctx.lineTo(this.x+4,this.y+18*this.dir)
+  ctx.lineTo(this.x+4,this.y+20*this.dir)
   ctx.stroke()
- }
-}
-
-/* ---------------- INTEGRAL PROTEIN ---------------- */
-class IntegralProtein{
- constructor(x){
-  this.x=x
- }
-
- move(){
-  this.x+=(Math.random()-0.5)*0.4
- }
-
- draw(){
-  ctx.fillStyle="#b084ff"
-  ctx.fillRect(this.x-12,mid()-40,24,80)
- }
-}
-
-/* ---------------- PERIPHERAL PROTEIN ---------------- */
-class PeripheralProtein{
- constructor(x,y){
-  this.x=x
-  this.y=y
- }
-
- move(){
-  this.x+=(Math.random()-0.5)*0.5
- }
-
- draw(){
-  ctx.fillStyle="#ff9ecb"
-  ctx.beginPath()
-  ctx.arc(this.x,this.y,7,0,Math.PI*2)
-  ctx.fill()
  }
 }
 
 /* ---------------- CHOLESTEROL ---------------- */
 class Cholesterol{
- constructor(x,y){
+ constructor(x,y){this.x=x;this.y=y}
+ move(){this.x+=(Math.random()-0.5)*0.3}
+ draw(){ctx.fillStyle="#ffd94a";ctx.fillRect(this.x-3,this.y-10,6,20)}
+}
+
+/* ---------------- ION CHANNEL ---------------- */
+class IonChannel{
+ constructor(x){
   this.x=x
-  this.y=y
+  this.open=Math.random()>0.5
  }
 
  move(){
   this.x+=(Math.random()-0.5)*0.3
+
+  if(Math.random()<0.005){
+   this.open=!this.open
+  }
  }
 
  draw(){
-  ctx.fillStyle="#ffd94a"
-  ctx.fillRect(this.x-3,this.y-10,6,20)
+  ctx.fillStyle="#9b7bff"
+  ctx.fillRect(this.x-10,mid()-40,20,80)
+
+  if(this.open){
+   ctx.strokeStyle="#00ffcc"
+   ctx.beginPath()
+   ctx.moveTo(this.x,mid()-35)
+   ctx.lineTo(this.x,mid()+35)
+   ctx.stroke()
+  }
+ }
+}
+
+/* ---------------- PERIPHERAL PROTEIN ---------------- */
+class PeripheralProtein{
+ constructor(x,y){this.x=x;this.y=y}
+ move(){this.x+=(Math.random()-0.5)*0.4}
+ draw(){ctx.fillStyle="#ff9ecb";ctx.beginPath();ctx.arc(this.x,this.y,7,0,Math.PI*2);ctx.fill()}
+}
+
+/* ---------------- GLYCOPROTEIN ---------------- */
+class Glycoprotein{
+ constructor(x){this.x=x}
+ move(){this.x+=(Math.random()-0.5)*0.3}
+ draw(){
+  ctx.fillStyle="#b084ff"
+  ctx.fillRect(this.x-10,mid()-35,20,70)
+
+  ctx.strokeStyle="#7CFF7A"
+  ctx.beginPath()
+  ctx.moveTo(this.x,mid()-35)
+  ctx.lineTo(this.x,mid()-60)
+  ctx.lineTo(this.x+8,mid()-70)
+  ctx.stroke()
  }
 }
 
 /* ---------------- GLYCOLIPID ---------------- */
 class Glycolipid{
- constructor(x,y){
+ constructor(x,y){this.x=x;this.y=y}
+ move(){this.x+=(Math.random()-0.5)*0.8}
+ draw(){
+  ctx.fillStyle="#6fd3ff"
+  ctx.beginPath();ctx.arc(this.x,this.y,5,0,Math.PI*2);ctx.fill()
+
+  ctx.strokeStyle="#ffd27f"
+  ctx.beginPath();ctx.moveTo(this.x,this.y);ctx.lineTo(this.x,this.y+20);ctx.stroke()
+
+  ctx.strokeStyle="#7CFF7A"
+  ctx.beginPath();ctx.moveTo(this.x,this.y-5);ctx.lineTo(this.x,this.y-18);ctx.lineTo(this.x+6,this.y-25);ctx.stroke()
+ }
+}
+
+/* ---------------- LIPID RAFT ---------------- */
+class LipidRaft{
+ constructor(x){this.x=x}
+ move(){this.x+=(Math.random()-0.5)*0.2}
+ draw(){
+  ctx.fillStyle="rgba(255,230,120,0.25)"
+  ctx.beginPath()
+  ctx.ellipse(this.x,mid(),80,40,0,0,Math.PI*2)
+  ctx.fill()
+ }
+}
+
+/* ---------------- CYTOSKELETON ---------------- */
+class Cytoskeleton{
+ constructor(x){this.x=x}
+ draw(){
+  ctx.strokeStyle="#ff7a7a"
+  ctx.lineWidth=2
+  ctx.beginPath()
+  ctx.moveTo(this.x,mid()+40)
+  ctx.lineTo(this.x+40,mid()+90)
+  ctx.lineTo(this.x+80,mid()+40)
+  ctx.stroke()
+ }
+}
+
+/* ---------------- FLIP-FLOP ENZYME ---------------- */
+class FlipFlopEnzyme{
+ constructor(x){
   this.x=x
-  this.y=y
  }
 
- move(){
-  this.x+=(Math.random()-0.5)*1
+ draw(){
+  ctx.fillStyle="#00e1ff"
+  ctx.fillRect(this.x-6,mid()-15,12,30)
  }
+
+ transport(lipid){
+  lipid.dir*=-1
+  lipid.y=(lipid.dir===1)?upper():lower()
+ }
+}
+
+/* ---------------- ARRAYS ---------------- */
+
+const lipids=[]
+const cholesterol=[]
+const channels=[]
+const peripheral=[]
+const glycolipids=[]
+const glycoproteins=[]
+const rafts=[]
+const cytoskeleton=[]
+const enzymes=[]
+
+const upper=()=>mid()-70
+const lower=()=>mid()+70
+
+for(let i=0;i<120;i++){
+ lipids.push(new Phospholipid(Math.random()*canvas.width,upper(),1))
+ lipids.push(new Phospholipid(Math.random()*canvas.width,lower(),-1))
+}
+
+for(let i=0;i<40;i++){
+ cholesterol.push(new Cholesterol(Math.random()*canvas.width,mid()))
+}
+
+for(let i=0;i<6;i++){
+ channels.push(new IonChannel(Math.random()*canvas.width))
+}
+
+for(let i=0;i<10;i++){
+ peripheral.push(new PeripheralProtein(Math.random()*canvas.width,mid()+100))
+}
+
+for(let i=0;i<8;i++){
+ glycolipids.push(new Glycolipid(Math.random()*canvas.width,upper()))
+}
+
+for(let i=0;i<6;i++){
+ glycoproteins.push(new Glycoprotein(Math.random()*canvas.width))
+}
+
+for(let i=0;i<3;i++){
+ rafts.push(new LipidRaft(Math.random()*canvas.width))
+}
+
+for(let i=0;i<6;i++){
+ cytoskeleton.push(new Cytoskeleton(Math.random()*canvas.width))
+}
+
+for(let i=0;i<3;i++){
+ enzymes.push(new FlipFlopEnzyme(Math.random()*canvas.width))
+}
+
+/* ---------------- LABELS ---------------- */
+function labels(){
+ ctx.fillStyle="white"
+ ctx.font="14px Arial"
+
+ ctx.fillText("Extracellular side",20,20)
+ ctx.fillText("Hydrophilic heads",20,upper()-10)
+ ctx.fillText("Hydrophobic lipid core",20,mid()+5)
+ ctx.fillText("Hydrophilic heads",20,lower()+25)
+ ctx.fillText("Cytoplasmic side",20,canvas.height-20)
+
+ ctx.fillText("Ion channels",canvas.width-120,mid()-60)
+ ctx.fillText("Cholesterol",canvas.width-110,mid()+70)
+ ctx.fillText("Lipid rafts",canvas.width-110,40)
+ ctx.fillText("Cytoskeleton",canvas.width-130,canvas.height-40)
+ ctx.fillText("Flip-flop enzymes",canvas.width-170,mid()+30)
+}
+
+/* ---------------- ANIMATION ---------------- */
+function animate(){
+ ctx.clearRect(0,0,canvas.width,canvas.height)
+
+ rafts.forEach(r=>{r.move();r.draw()})
+
+ lipids.forEach(l=>{l.move();l.draw()})
+ cholesterol.forEach(c=>{c.move();c.draw()})
+ channels.forEach(c=>{c.move();c.draw()})
+ peripheral.forEach(p=>{p.move();p.draw()})
+ glycolipids.forEach(g=>{g.move();g.draw()})
+ glycoproteins.forEach(g=>{g.move();g.draw()})
+ cytoskeleton.forEach(c=>c.draw())
+ enzymes.forEach(e=>e.draw())
+
+ if(Math.random()<0.01){
+  const lipid=lipids[Math.floor(Math.random()*lipids.length)]
+  const enzyme=enzymes[Math.floor(Math.random()*enzymes.length)]
+  enzyme.transport(lipid)
+ }
+
+ labels()
+
+ requestAnimationFrame(animate)
+}
+
+animate()
+</script></body>
+</html> }
 
  draw(){
 
