@@ -19,4 +19,21 @@ class Lipid{ constructor(x,y){ this.x=x;this.y=y; this.vx=(Math.random()-0.5)0.8
 
 class Protein{ constructor(x,y){this.x=x;this.y=y} move(){this.x+=Math.sin(Date.now()/600)/5} draw(){ ctx.fillStyle="#b084ff"; ctx.fillRect(this.x-10,this.y-30,20,60); } }
 
-class Cholesterol{ constructor(x,y){this.x=x;this
+class Cholesterol{ constructor(x,y){this.x=x;this.y=y} move(){this.x+=Math.sin(Date.now()/800)/10} draw(){ ctx.fillStyle="#f7d94c"; ctx.fillRect(this.x-3,this.y-10,6,20); } }
+
+for(let i=0;i<140;i++){ let y=i%2==0?160:290; lipids.push(new Lipid(Math.random()*900,y)); }
+
+for(let i=0;i<6;i++){ proteins.push(new Protein(Math.random()*900,225)); }
+
+for(let i=0;i<25;i++){ chol.push(new Cholesterol(Math.random()*900,225)); }
+
+function animate(){ ctx.clearRect(0,0,canvas.width,canvas.height);
+
+lipids.forEach(l=>{l.move();l.draw();}); proteins.forEach(p=>{p.move();p.draw();}); chol.forEach(c=>{c.move();c.draw();});
+
+requestAnimationFrame(animate); }
+
+animate(); </script>
+
+</body>
+</html>
