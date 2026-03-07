@@ -2,26 +2,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cell Membrane Real-Time Simulation</title>
+<title>Cell Membrane Biochemistry Simulation</title>
 <style>
 body{margin:0;background:#071a2c;color:white;font-family:Arial;text-align:center}
-h2{margin:8px}
-canvas{background:#0e2f4d;display:block;margin:auto;border:2px solid white;width:95vw;height:70vh}
+h2{margin:6px}
+canvas{background:#0e2f4d;border:2px solid white;display:block;margin:auto;width:96vw;height:72vh}
 </style>
 </head>
-<body><h2>Cell Membrane – Real Time Molecular Motion</h2><canvas id="membrane"></canvas>
+<body><h2>Plasma Membrane – Fluid Mosaic Model (Biochemistry Simulation)</h2><canvas id="membrane"></canvas>
 
 <script>
 const canvas=document.getElementById("membrane")
 const ctx=canvas.getContext("2d")
 
 function resize(){
- canvas.width=window.innerWidth*0.95
- canvas.height=window.innerHeight*0.7
+ canvas.width=window.innerWidth*0.96
+ canvas.height=window.innerHeight*0.72
 }
 resize()
 window.addEventListener("resize",resize)
 
+const mid=()=>canvas.height/2
+
+/* ---------------- PHOSPHOLIPID ---------------- */
 class Phospholipid{
  constructor(x,y,dir){
   this.x=x
@@ -30,8 +33,8 @@ class Phospholipid{
  }
 
  move(){
-  this.x+=(Math.random()-0.5)*1.2
-  this.y+=(Math.random()-0.5)*0.3
+  this.x+=(Math.random()-0.5)*1.4
+  this.y+=(Math.random()-0.5)*0.15
 
   if(this.x<0)this.x=canvas.width
   if(this.x>canvas.width)this.x=0
@@ -45,16 +48,18 @@ class Phospholipid{
 
   ctx.strokeStyle="#ffd27f"
   ctx.lineWidth=2
-  ctx.beginPath()
 
+  ctx.beginPath()
   ctx.moveTo(this.x,this.y)
   ctx.lineTo(this.x,this.y+18*this.dir)
-
+  ctx.moveTo(this.x,this.y)
+  ctx.lineTo(this.x+4,this.y+18*this.dir)
   ctx.stroke()
  }
 }
 
-class Protein{
+/* ---------------- INTEGRAL PROTEIN ---------------- */
+class IntegralProtein{
  constructor(x){
   this.x=x
  }
@@ -65,10 +70,30 @@ class Protein{
 
  draw(){
   ctx.fillStyle="#b084ff"
-  ctx.fillRect(this.x-12,canvas.height/2-40,24,80)
+  ctx.fillRect(this.x-12,mid()-40,24,80)
  }
 }
 
+/* ---------------- PERIPHERAL PROTEIN ---------------- */
+class PeripheralProtein{
+ constructor(x,y){
+  this.x=x
+  this.y=y
+ }
+
+ move(){
+  this.x+=(Math.random()-0.5)*0.5
+ }
+
+ draw(){
+  ctx.fillStyle="#ff9ecb"
+  ctx.beginPath()
+  ctx.arc(this.x,this.y,7,0,Math.PI*2)
+  ctx.fill()
+ }
+}
+
+/* ---------------- CHOLESTEROL ---------------- */
 class Cholesterol{
  constructor(x,y){
   this.x=x
@@ -85,44 +110,129 @@ class Cholesterol{
  }
 }
 
+/* ---------------- GLYCOLIPID ---------------- */
+class Glycolipid{
+ constructor(x,y){
+  this.x=x
+  this.y=y
+ }
+
+ move(){
+  this.x+=(Math.random()-0.5)*1
+ }
+
+ draw(){
+
+  ctx.fillStyle="#7fd3ff"
+  ctx.beginPath()
+  ctx.arc(this.x,this.y,5,0,Math.PI*2)
+  ctx.fill()
+
+  ctx.strokeStyle="#ffd27f"
+  ctx.beginPath()
+  ctx.moveTo(this.x,this.y)
+  ctx.lineTo(this.x,this.y+18)
+  ctx.stroke()
+
+  ctx.strokeStyle="#7CFF7A"
+  ctx.beginPath()
+  ctx.moveTo(this.x,this.y-5)
+  ctx.lineTo(this.x,this.y-18)
+  ctx.lineTo(this.x+6,this.y-24)
+  ctx.stroke()
+ }
+}
+
+/* ---------------- GLYCOPROTEIN ---------------- */
+class Glycoprotein{
+ constructor(x){
+  this.x=x
+ }
+
+ move(){
+  this.x+=(Math.random()-0.5)*0.4
+ }
+
+ draw(){
+
+  ctx.fillStyle="#b084ff"
+  ctx.fillRect(this.x-10,mid()-35,20,70)
+
+  ctx.strokeStyle="#7CFF7A"
+  ctx.beginPath()
+  ctx.moveTo(this.x,mid()-35)
+  ctx.lineTo(this.x,mid()-60)
+  ctx.lineTo(this.x+8,mid()-70)
+  ctx.stroke()
+ }
+}
+
+/* ---------------- ARRAYS ---------------- */
+
 const lipids=[]
 const proteins=[]
+const peripheral=[]
 const cholesterol=[]
+const glycolipids=[]
+const glycoproteins=[]
 
-const upperY=canvas.height/2-60
-const lowerY=canvas.height/2+60
+const upper=()=>mid()-70
+const lower=()=>mid()+70
 
-for(let i=0;i<90;i++){
- lipids.push(new Phospholipid(Math.random()*canvas.width,upperY,1))
- lipids.push(new Phospholipid(Math.random()*canvas.width,lowerY,-1))
+for(let i=0;i<110;i++){
+ lipids.push(new Phospholipid(Math.random()*canvas.width,upper(),1))
+ lipids.push(new Phospholipid(Math.random()*canvas.width,lower(),-1))
 }
 
 for(let i=0;i<7;i++){
- proteins.push(new Protein(Math.random()*canvas.width))
+ proteins.push(new IntegralProtein(Math.random()*canvas.width))
 }
 
-for(let i=0;i<30;i++){
- cholesterol.push(new Cholesterol(Math.random()*canvas.width,canvas.height/2))
+for(let i=0;i<10;i++){
+ peripheral.push(new PeripheralProtein(Math.random()*canvas.width,mid()+100))
 }
+
+for(let i=0;i<40;i++){
+ cholesterol.push(new Cholesterol(Math.random()*canvas.width,mid()))
+}
+
+for(let i=0;i<10;i++){
+ glycolipids.push(new Glycolipid(Math.random()*canvas.width,upper()))
+}
+
+for(let i=0;i<6;i++){
+ glycoproteins.push(new Glycoprotein(Math.random()*canvas.width))
+}
+
+/* ---------------- LABELS ---------------- */
 
 function labels(){
  ctx.fillStyle="white"
  ctx.font="14px Arial"
 
- ctx.fillText("Hydrophilic Heads",20,upperY-10)
- ctx.fillText("Hydrophobic Fatty Acid Tails",20,canvas.height/2+5)
- ctx.fillText("Hydrophilic Heads",20,lowerY+25)
+ ctx.fillText("Extracellular Side",20,20)
+ ctx.fillText("Hydrophilic Heads",20,upper()-10)
+ ctx.fillText("Hydrophobic Fatty Acid Core",20,mid()+5)
+ ctx.fillText("Hydrophilic Heads",20,lower()+25)
+ ctx.fillText("Cytoplasmic Side",20,canvas.height-20)
 
- ctx.fillText("Integral Proteins",canvas.width-150,canvas.height/2-50)
- ctx.fillText("Cholesterol",canvas.width-110,canvas.height/2+70)
+ ctx.fillText("Integral Proteins",canvas.width-150,mid()-50)
+ ctx.fillText("Peripheral Proteins",canvas.width-160,mid()+110)
+ ctx.fillText("Cholesterol",canvas.width-110,mid()+60)
+ ctx.fillText("Glycoprotein / Glycolipid Carbohydrates",canvas.width-300,40)
 }
+
+/* ---------------- ANIMATION ---------------- */
 
 function animate(){
  ctx.clearRect(0,0,canvas.width,canvas.height)
 
  lipids.forEach(l=>{l.move();l.draw()})
  proteins.forEach(p=>{p.move();p.draw()})
+ peripheral.forEach(p=>{p.move();p.draw()})
  cholesterol.forEach(c=>{c.move();c.draw()})
+ glycolipids.forEach(g=>{g.move();g.draw()})
+ glycoproteins.forEach(g=>{g.move();g.draw()})
 
  labels()
 
