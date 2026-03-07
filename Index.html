@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Membrane Fluidity Simulation</title>
+<style>
+body{margin:0;background:#0b1a2a;color:white;font-family:Arial}
+canvas{display:block;margin:auto;background:#0f2b45}
+h1{text-align:center}
+</style>
+</head>
+<body>
+<h1>Phospholipid Membrane Fluidity Simulation</h1>
+<canvas id="membrane" width="900" height="450"></canvas>
+<script>
+const canvas=document.getElementById("membrane");
+const ctx=canvas.getContext("2d");const lipids=[]; const proteins=[]; const chol=[];
+
+class Lipid{ constructor(x,y){ this.x=x;this.y=y; this.vx=(Math.random()-0.5)0.8; } move(){ this.x+=this.vx; if(this.x<0||this.x>canvas.width)this.vx=-1; } draw(){ ctx.fillStyle="#8fd3ff"; ctx.beginPath(); ctx.arc(this.x,this.y,5,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#ffd27f"; ctx.beginPath(); ctx.moveTo(this.x,this.y); ctx.lineTo(this.x,this.y+18); ctx.stroke(); } }
+
+class Protein{ constructor(x,y){this.x=x;this.y=y} move(){this.x+=Math.sin(Date.now()/600)/5} draw(){ ctx.fillStyle="#b084ff"; ctx.fillRect(this.x-10,this.y-30,20,60); } }
+
+class Cholesterol{ constructor(x,y){this.x=x;this
