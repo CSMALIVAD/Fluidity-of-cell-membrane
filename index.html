@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -9,8 +8,8 @@
 body{
 margin:0;
 background:#020617;
-font-family:Arial;
 color:white;
+font-family:Arial;
 text-align:center;
 }
 
@@ -22,45 +21,37 @@ margin:auto;
 border:2px solid white;
 }
 
-/* legend */
-
 .legend{
 position:absolute;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
 background:rgba(0,0,0,0.6);
-padding:12px;
+padding:10px;
 border-radius:8px;
-font-size:14px;
+font-size:13px;
 text-align:left;
 }
 
-/* labels */
+.symbol{
+width:12px;
+height:12px;
+display:inline-block;
+margin-right:6px;
+}
 
 .label{
 position:absolute;
 left:50%;
 transform:translateX(-50%);
-font-size:14px;
+font-size:13px;
 }
 
-#extra{ top:40px; }
-
-#outerleaf{ top:calc(50% - 140px); }
-
-#core{ top:50%; }
-
-#innerleaf{ top:calc(50% + 140px); }
-
-#cyto{ bottom:40px; }
-
-.symbol{
-width:14px;
-height:14px;
-display:inline-block;
-margin-right:6px;
-}
+#extra{top:40px}
+#outerleaf{top:calc(50% - 140px)}
+#core{top:50%}
+#innerleaf{top:calc(50% + 140px)}
+#cyto{bottom:40px}
 
 </style>
 </head>
@@ -79,7 +70,7 @@ margin-right:6px;
 
 <div><span class="symbol" style="background:#4dabf7"></span>Phospholipid head</div>
 <div><span class="symbol" style="background:#ffd43b"></span>Fatty acid tails</div>
-<div><span class="symbol" style="background:#845ef7"></span>Integral membrane protein</div>
+<div><span class="symbol" style="background:#845ef7"></span>Integral protein</div>
 <div><span class="symbol" style="background:#ffe066"></span>Cholesterol</div>
 <div><span class="symbol" style="background:#40c057"></span>Carbohydrate chain</div>
 
@@ -91,51 +82,41 @@ const canvas=document.getElementById("membrane")
 const ctx=canvas.getContext("2d")
 
 function resize(){
-
 canvas.width=window.innerWidth*0.96
 canvas.height=window.innerHeight*0.9
-
 }
-
 resize()
 window.addEventListener("resize",resize)
 
 const centerX=()=>canvas.width/2
 const centerY=()=>canvas.height/2
 
-/* bilayer geometry */
-
 const outerR=()=>Math.min(canvas.width,canvas.height)/3
 const innerR=()=>outerR()-32
 
-
-/* =================
+/* =========================
 PHOSPHOLIPID
-================= */
+========================= */
 
 class Lipid{
 
 constructor(angle,leaflet){
-
 this.angle=angle
 this.leaflet=leaflet
-
 }
 
 move(){
-
 this.angle+=(Math.random()-0.5)*0.002
-
 }
 
 draw(){
 
-const r=this.leaflet=="outer"?outerR():innerR()
+const r=this.leaflet==="outer"?outerR():innerR()
 
 const x=centerX()+r*Math.cos(this.angle)
 const y=centerY()+r*Math.sin(this.angle)
 
-const dir=this.leaflet=="outer"?-1:1
+const dir=this.leaflet==="outer"?-1:1
 
 /* head */
 
@@ -148,7 +129,6 @@ ctx.fill()
 /* tails */
 
 ctx.strokeStyle="#ffd43b"
-ctx.lineWidth=1.5
 
 ctx.beginPath()
 
@@ -157,8 +137,8 @@ ctx.lineTo(x+dir*14*Math.cos(this.angle),
            y+dir*14*Math.sin(this.angle))
 
 ctx.moveTo(x,y)
-ctx.lineTo(x+dir*14*Math.cos(this.angle+0.22),
-           y+dir*14*Math.sin(this.angle+0.22))
+ctx.lineTo(x+dir*14*Math.cos(this.angle+0.25),
+           y+dir*14*Math.sin(this.angle+0.25))
 
 ctx.stroke()
 
@@ -166,23 +146,46 @@ ctx.stroke()
 
 }
 
+/* =========================
+CHOLESTEROL
+========================= */
 
-/* =================
-PROTEIN
-================= */
+class Cholesterol{
+
+constructor(angle){
+this.angle=angle
+}
+
+move(){
+this.angle+=(Math.random()-0.5)*0.0008
+}
+
+draw(){
+
+const r=(outerR()+innerR())/2
+
+const x=centerX()+r*Math.cos(this.angle)
+const y=centerY()+r*Math.sin(this.angle)
+
+ctx.fillStyle="#ffe066"
+ctx.fillRect(x-1.5,y-6,3,12)
+
+}
+
+}
+
+/* =========================
+INTEGRAL PROTEIN
+========================= */
 
 class Protein{
 
 constructor(angle){
-
 this.angle=angle
-
 }
 
 move(){
-
 this.angle+=(Math.random()-0.5)*0.001
-
 }
 
 draw(){
@@ -195,29 +198,31 @@ const y=centerY()+r*Math.sin(this.angle)
 ctx.fillStyle="#845ef7"
 
 ctx.beginPath()
-ctx.arc(x,y,10,0,Math.PI*2)
+ctx.arc(x,y,9,0,Math.PI*2)
 ctx.fill()
 
 }
 
 }
 
+/* =========================
+ION CHANNEL
+========================= */
 
-/* =================
-CHOLESTEROL
-================= */
-
-class Cholesterol{
+class IonChannel{
 
 constructor(angle){
-
 this.angle=angle
-
+this.open=Math.random()>0.5
 }
 
 move(){
 
-this.angle+=(Math.random()-0.5)*0.0008
+this.angle+=(Math.random()-0.5)*0.001
+
+if(Math.random()<0.003){
+this.open=!this.open
+}
 
 }
 
@@ -228,31 +233,39 @@ const r=(outerR()+innerR())/2
 const x=centerX()+r*Math.cos(this.angle)
 const y=centerY()+r*Math.sin(this.angle)
 
-ctx.fillStyle="#ffe066"
+ctx.fillStyle="#7b2cbf"
 
-ctx.fillRect(x-1.5,y-6,3,12)
+ctx.beginPath()
+ctx.arc(x,y,9,0,Math.PI*2)
+ctx.fill()
+
+if(this.open){
+
+ctx.strokeStyle="#00e5ff"
+
+ctx.beginPath()
+ctx.moveTo(x-3,y)
+ctx.lineTo(x+3,y)
+ctx.stroke()
 
 }
 
 }
 
+}
 
-/* =================
+/* =========================
 GLYCOPROTEIN
-================= */
+========================= */
 
 class Glycoprotein{
 
 constructor(angle){
-
 this.angle=angle
-
 }
 
 move(){
-
 this.angle+=(Math.random()-0.5)*0.001
-
 }
 
 draw(){
@@ -265,11 +278,10 @@ const y=centerY()+r*Math.sin(this.angle)
 ctx.fillStyle="#845ef7"
 
 ctx.beginPath()
-ctx.arc(x,y,8,0,Math.PI*2)
+ctx.arc(x,y,7,0,Math.PI*2)
 ctx.fill()
 
 ctx.strokeStyle="#40c057"
-ctx.lineWidth=2
 
 ctx.beginPath()
 ctx.moveTo(x,y)
@@ -281,51 +293,195 @@ ctx.stroke()
 
 }
 
+/* =========================
+GLYCOLIPID
+========================= */
+
+class Glycolipid{
+
+constructor(angle){
+this.angle=angle
+}
+
+move(){
+this.angle+=(Math.random()-0.5)*0.001
+}
+
+draw(){
+
+const r=outerR()
+
+const x=centerX()+r*Math.cos(this.angle)
+const y=centerY()+r*Math.sin(this.angle)
+
+ctx.fillStyle="#4dabf7"
+
+ctx.beginPath()
+ctx.arc(x,y,3.5,0,Math.PI*2)
+ctx.fill()
+
+ctx.strokeStyle="#40c057"
+
+ctx.beginPath()
+ctx.moveTo(x,y)
+ctx.lineTo(x+14*Math.cos(this.angle),
+           y+14*Math.sin(this.angle))
+ctx.stroke()
+
+}
+
+}
+
+/* =========================
+PERIPHERAL PROTEIN
+========================= */
+
+class Peripheral{
+
+constructor(angle){
+this.angle=angle
+}
+
+move(){
+this.angle+=(Math.random()-0.5)*0.002
+}
+
+draw(){
+
+const r=innerR()-12
+
+const x=centerX()+r*Math.cos(this.angle)
+const y=centerY()+r*Math.sin(this.angle)
+
+ctx.fillStyle="#f06595"
+
+ctx.beginPath()
+ctx.arc(x,y,4,0,Math.PI*2)
+ctx.fill()
+
+}
+
+}
+
+/* =========================
+CYTOSKELETON
+========================= */
+
+class Cytoskeleton{
+
+constructor(angle){
+this.angle=angle
+}
+
+draw(){
+
+const r=innerR()-10
+
+const x=centerX()+r*Math.cos(this.angle)
+const y=centerY()+r*Math.sin(this.angle)
+
+ctx.strokeStyle="#fa5252"
+
+ctx.beginPath()
+ctx.moveTo(x,y)
+ctx.lineTo(
+x+20*Math.cos(this.angle+0.4),
+y+20*Math.sin(this.angle+0.4)
+)
+ctx.stroke()
+
+}
+
+}
+
+/* =========================
+LIPID RAFT
+========================= */
+
+class Raft{
+
+constructor(angle){
+this.angle=angle
+}
+
+move(){
+this.angle+=(Math.random()-0.5)*0.0005
+}
+
+draw(){
+
+const r=(outerR()+innerR())/2
+
+const x=centerX()+r*Math.cos(this.angle)
+const y=centerY()+r*Math.sin(this.angle)
+
+ctx.fillStyle="rgba(255,230,120,0.25)"
+
+ctx.beginPath()
+ctx.arc(x,y,18,0,Math.PI*2)
+ctx.fill()
+
+}
+
+}
 
 /* arrays */
 
 const lipids=[]
-const proteins=[]
 const cholesterol=[]
+const proteins=[]
+const channels=[]
 const glycoproteins=[]
-
-
-/* fewer lipids for clarity */
+const glycolipids=[]
+const peripherals=[]
+const cytoskeleton=[]
+const rafts=[]
 
 for(let i=0;i<120;i++){
-
 lipids.push(new Lipid(Math.random()*Math.PI*2,"outer"))
 lipids.push(new Lipid(Math.random()*Math.PI*2,"inner"))
-
 }
 
-/* proteins */
-
-for(let i=0;i<10;i++)
-proteins.push(new Protein(Math.random()*Math.PI*2))
-
-/* cholesterol */
-
-for(let i=0;i<30;i++)
+for(let i=0;i<25;i++)
 cholesterol.push(new Cholesterol(Math.random()*Math.PI*2))
 
-/* glycoproteins */
+for(let i=0;i<8;i++)
+proteins.push(new Protein(Math.random()*Math.PI*2))
+
+for(let i=0;i<5;i++)
+channels.push(new IonChannel(Math.random()*Math.PI*2))
 
 for(let i=0;i<6;i++)
 glycoproteins.push(new Glycoprotein(Math.random()*Math.PI*2))
 
+for(let i=0;i<6;i++)
+glycolipids.push(new Glycolipid(Math.random()*Math.PI*2))
+
+for(let i=0;i<8;i++)
+peripherals.push(new Peripheral(Math.random()*Math.PI*2))
+
+for(let i=0;i<10;i++)
+cytoskeleton.push(new Cytoskeleton(Math.random()*Math.PI*2))
+
+for(let i=0;i<3;i++)
+rafts.push(new Raft(Math.random()*Math.PI*2))
+
+/* animation */
 
 function animate(){
 
 ctx.clearRect(0,0,canvas.width,canvas.height)
 
+rafts.forEach(r=>{r.move();r.draw()})
+
 lipids.forEach(l=>{l.move();l.draw()})
-
-proteins.forEach(p=>{p.move();p.draw()})
-
 cholesterol.forEach(c=>{c.move();c.draw()})
-
+proteins.forEach(p=>{p.move();p.draw()})
+channels.forEach(c=>{c.move();c.draw()})
 glycoproteins.forEach(g=>{g.move();g.draw()})
+glycolipids.forEach(g=>{g.move();g.draw()})
+peripherals.forEach(p=>{p.move();p.draw()})
+cytoskeleton.forEach(c=>c.draw())
 
 requestAnimationFrame(animate)
 
