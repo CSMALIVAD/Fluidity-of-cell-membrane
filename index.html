@@ -41,7 +41,7 @@ font-size:14px;
 
 <div id="extra" class="label">Extracellular space</div>
 <div id="outer" class="label">Outer leaflet (hydrophilic heads)</div>
-<div id="core" class="label">Hydrophobic core</div>
+<div id="core" class="label">Hydrophobic lipid core</div>
 <div id="inner" class="label">Inner leaflet (hydrophilic heads)</div>
 <div id="cyto" class="label">Cytoplasm</div>
 
@@ -69,7 +69,10 @@ constructor(x,leaflet){
 
 this.x=x
 this.leaflet=leaflet
-this.v=(Math.random()-0.5)*0.4
+
+this.v=(Math.random()-0.5)*0.25
+
+this.unsaturated=Math.random()<0.45
 
 }
 
@@ -92,21 +95,33 @@ const dir=this.leaflet==="outer"?1:-1
 ctx.fillStyle="#4dabf7"
 
 ctx.beginPath()
-ctx.arc(this.x,headY,5,0,Math.PI*2)
+ctx.arc(this.x,headY,4,0,Math.PI*2)
 ctx.fill()
 
 /* tails */
 
 ctx.strokeStyle="#ffd43b"
-ctx.lineWidth=2
+ctx.lineWidth=1.5
 
 ctx.beginPath()
 
-ctx.moveTo(this.x,headY)
-ctx.lineTo(this.x-3,headY+dir*25)
+if(this.unsaturated){
 
 ctx.moveTo(this.x,headY)
-ctx.lineTo(this.x+3,headY+dir*25)
+ctx.quadraticCurveTo(this.x-6,headY+dir*12,this.x-3,headY+dir*26)
+
+ctx.moveTo(this.x,headY)
+ctx.lineTo(this.x+3,headY+dir*26)
+
+}else{
+
+ctx.moveTo(this.x,headY)
+ctx.lineTo(this.x-3,headY+dir*26)
+
+ctx.moveTo(this.x,headY)
+ctx.lineTo(this.x+3,headY+dir*26)
+
+}
 
 ctx.stroke()
 
@@ -121,8 +136,10 @@ CHOLESTEROL
 class Cholesterol{
 
 constructor(x){
+
 this.x=x
-this.v=(Math.random()-0.5)*0.2
+this.v=(Math.random()-0.5)*0.15
+
 }
 
 move(){
@@ -140,7 +157,7 @@ const y=mid()
 
 ctx.fillStyle="#ffe066"
 
-ctx.fillRect(this.x-2,y-15,4,30)
+ctx.fillRect(this.x-2,y-18,4,36)
 
 }
 
@@ -154,7 +171,7 @@ class Protein{
 
 constructor(x){
 this.x=x
-this.v=(Math.random()-0.5)*0.3
+this.v=(Math.random()-0.5)*0.2
 }
 
 move(){
@@ -171,7 +188,7 @@ draw(){
 ctx.fillStyle="#845ef7"
 
 ctx.beginPath()
-ctx.roundRect(this.x-8,mid()-80,16,160,10)
+ctx.roundRect(this.x-10,mid()-85,20,170,10)
 ctx.fill()
 
 }
@@ -189,7 +206,7 @@ this.x=x
 }
 
 move(){
-this.x+=(Math.random()-0.5)*0.3
+this.x+=(Math.random()-0.5)*0.2
 }
 
 draw(){
@@ -197,14 +214,15 @@ draw(){
 ctx.fillStyle="#845ef7"
 
 ctx.beginPath()
-ctx.arc(this.x,mid()-80,8,0,Math.PI*2)
+ctx.arc(this.x,mid()-85,8,0,Math.PI*2)
 ctx.fill()
 
 ctx.strokeStyle="#40c057"
+ctx.lineWidth=2
 
 ctx.beginPath()
-ctx.moveTo(this.x,mid()-80)
-ctx.lineTo(this.x,mid()-110)
+ctx.moveTo(this.x,mid()-85)
+ctx.lineTo(this.x,mid()-115)
 ctx.stroke()
 
 }
@@ -222,7 +240,7 @@ this.x=x
 }
 
 move(){
-this.x+=(Math.random()-0.5)*0.4
+this.x+=(Math.random()-0.5)*0.3
 }
 
 draw(){
@@ -245,21 +263,35 @@ const proteins=[]
 const glycoproteins=[]
 const peripherals=[]
 
-for(let i=0;i<120;i++){
-lipids.push(new Lipid(Math.random()*canvas.width,"outer"))
-lipids.push(new Lipid(Math.random()*canvas.width,"inner"))
+/* dense phospholipid bilayer */
+
+const lipidSpacing=10
+
+for(let x=0;x<canvas.width;x+=lipidSpacing){
+
+lipids.push(new Lipid(x,"outer"))
+lipids.push(new Lipid(x,"inner"))
+
 }
 
-for(let i=0;i<30;i++)
+/* cholesterol molecules */
+
+for(let i=0;i<80;i++)
 cholesterol.push(new Cholesterol(Math.random()*canvas.width))
 
-for(let i=0;i<8;i++)
+/* proteins */
+
+for(let i=0;i<10;i++)
 proteins.push(new Protein(Math.random()*canvas.width))
 
-for(let i=0;i<6;i++)
-glycoproteins.push(new Glycoprotein(Math.random()*canvas.width))
+/* glycoproteins */
 
 for(let i=0;i<8;i++)
+glycoproteins.push(new Glycoprotein(Math.random()*canvas.width))
+
+/* peripheral proteins */
+
+for(let i=0;i<10;i++)
 peripherals.push(new Peripheral(Math.random()*canvas.width))
 
 /* =========================
@@ -270,12 +302,10 @@ function animate(){
 
 ctx.clearRect(0,0,canvas.width,canvas.height)
 
-/* membrane core shading */
+/* membrane hydrophobic core */
 
-ctx.fillStyle="rgba(255,255,255,0.05)"
+ctx.fillStyle="rgba(255,255,255,0.06)"
 ctx.fillRect(0,mid()-60,canvas.width,120)
-
-/* movement */
 
 lipids.forEach(l=>{l.move();l.draw()})
 cholesterol.forEach(c=>{c.move();c.draw()})
