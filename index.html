@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
 
 body{
 margin:0;
 background:#020617;
-color:white;
 font-family:Arial;
+color:white;
 text-align:center;
 }
 
@@ -19,6 +21,8 @@ display:block;
 margin:auto;
 border:2px solid white;
 }
+
+/* legend */
 
 .legend{
 position:absolute;
@@ -32,23 +36,31 @@ font-size:14px;
 text-align:left;
 }
 
+/* labels */
+
+.label{
+position:absolute;
+left:50%;
+transform:translateX(-50%);
+font-size:14px;
+}
+
+#extra{ top:40px; }
+
+#outerleaf{ top:calc(50% - 140px); }
+
+#core{ top:50%; }
+
+#innerleaf{ top:calc(50% + 140px); }
+
+#cyto{ bottom:40px; }
+
 .symbol{
 width:14px;
 height:14px;
 display:inline-block;
 margin-right:6px;
 }
-
-.label{
-position:absolute;
-font-size:14px;
-}
-
-#extra{ top:10px; left:20px;}
-#cyto{ bottom:10px; left:20px;}
-#outerleaf{ top:120px; left:20px;}
-#innerleaf{ bottom:120px; left:20px;}
-#core{ top:50%; left:20px; transform:translateY(-50%);}
 
 </style>
 </head>
@@ -58,10 +70,10 @@ font-size:14px;
 <canvas id="membrane"></canvas>
 
 <div id="extra" class="label">Extracellular Space</div>
-<div id="cyto" class="label">Cytoplasm</div>
 <div id="outerleaf" class="label">Outer Leaflet (Hydrophilic Heads)</div>
-<div id="innerleaf" class="label">Inner Leaflet (Hydrophilic Heads)</div>
 <div id="core" class="label">Hydrophobic Lipid Core</div>
+<div id="innerleaf" class="label">Inner Leaflet (Hydrophilic Heads)</div>
+<div id="cyto" class="label">Cytoplasm</div>
 
 <div class="legend">
 
@@ -79,28 +91,41 @@ const canvas=document.getElementById("membrane")
 const ctx=canvas.getContext("2d")
 
 function resize(){
+
 canvas.width=window.innerWidth*0.96
 canvas.height=window.innerHeight*0.9
+
 }
+
 resize()
 window.addEventListener("resize",resize)
 
 const centerX=()=>canvas.width/2
 const centerY=()=>canvas.height/2
 
-const outerR=()=>Math.min(canvas.width,canvas.height)/3
-const innerR=()=>outerR()-28
+/* bilayer geometry */
 
+const outerR=()=>Math.min(canvas.width,canvas.height)/3
+const innerR=()=>outerR()-32
+
+
+/* =================
+PHOSPHOLIPID
+================= */
 
 class Lipid{
 
 constructor(angle,leaflet){
+
 this.angle=angle
 this.leaflet=leaflet
+
 }
 
 move(){
+
 this.angle+=(Math.random()-0.5)*0.002
+
 }
 
 draw(){
@@ -112,21 +137,28 @@ const y=centerY()+r*Math.sin(this.angle)
 
 const dir=this.leaflet=="outer"?-1:1
 
+/* head */
+
 ctx.fillStyle="#4dabf7"
 
 ctx.beginPath()
-ctx.arc(x,y,4,0,Math.PI*2)
+ctx.arc(x,y,3.5,0,Math.PI*2)
 ctx.fill()
 
+/* tails */
+
 ctx.strokeStyle="#ffd43b"
+ctx.lineWidth=1.5
 
 ctx.beginPath()
 
 ctx.moveTo(x,y)
-ctx.lineTo(x+dir*12*Math.cos(this.angle),y+dir*12*Math.sin(this.angle))
+ctx.lineTo(x+dir*14*Math.cos(this.angle),
+           y+dir*14*Math.sin(this.angle))
 
 ctx.moveTo(x,y)
-ctx.lineTo(x+dir*12*Math.cos(this.angle+0.2),y+dir*12*Math.sin(this.angle+0.2))
+ctx.lineTo(x+dir*14*Math.cos(this.angle+0.22),
+           y+dir*14*Math.sin(this.angle+0.22))
 
 ctx.stroke()
 
@@ -135,14 +167,22 @@ ctx.stroke()
 }
 
 
+/* =================
+PROTEIN
+================= */
+
 class Protein{
 
 constructor(angle){
+
 this.angle=angle
+
 }
 
 move(){
+
 this.angle+=(Math.random()-0.5)*0.001
+
 }
 
 draw(){
@@ -155,7 +195,7 @@ const y=centerY()+r*Math.sin(this.angle)
 ctx.fillStyle="#845ef7"
 
 ctx.beginPath()
-ctx.arc(x,y,9,0,Math.PI*2)
+ctx.arc(x,y,10,0,Math.PI*2)
 ctx.fill()
 
 }
@@ -163,14 +203,22 @@ ctx.fill()
 }
 
 
+/* =================
+CHOLESTEROL
+================= */
+
 class Cholesterol{
 
 constructor(angle){
+
 this.angle=angle
+
 }
 
 move(){
+
 this.angle+=(Math.random()-0.5)*0.0008
+
 }
 
 draw(){
@@ -181,21 +229,30 @@ const x=centerX()+r*Math.cos(this.angle)
 const y=centerY()+r*Math.sin(this.angle)
 
 ctx.fillStyle="#ffe066"
-ctx.fillRect(x-2,y-7,4,14)
+
+ctx.fillRect(x-1.5,y-6,3,12)
 
 }
 
 }
 
+
+/* =================
+GLYCOPROTEIN
+================= */
 
 class Glycoprotein{
 
 constructor(angle){
+
 this.angle=angle
+
 }
 
 move(){
+
 this.angle+=(Math.random()-0.5)*0.001
+
 }
 
 draw(){
@@ -212,10 +269,12 @@ ctx.arc(x,y,8,0,Math.PI*2)
 ctx.fill()
 
 ctx.strokeStyle="#40c057"
+ctx.lineWidth=2
 
 ctx.beginPath()
 ctx.moveTo(x,y)
-ctx.lineTo(x+15*Math.cos(this.angle),y+15*Math.sin(this.angle))
+ctx.lineTo(x+18*Math.cos(this.angle),
+           y+18*Math.sin(this.angle))
 ctx.stroke()
 
 }
@@ -223,23 +282,34 @@ ctx.stroke()
 }
 
 
+/* arrays */
+
 const lipids=[]
 const proteins=[]
 const cholesterol=[]
 const glycoproteins=[]
 
-for(let i=0;i<160;i++){
+
+/* fewer lipids for clarity */
+
+for(let i=0;i<120;i++){
 
 lipids.push(new Lipid(Math.random()*Math.PI*2,"outer"))
 lipids.push(new Lipid(Math.random()*Math.PI*2,"inner"))
 
 }
 
-for(let i=0;i<12;i++)
+/* proteins */
+
+for(let i=0;i<10;i++)
 proteins.push(new Protein(Math.random()*Math.PI*2))
 
-for(let i=0;i<40;i++)
+/* cholesterol */
+
+for(let i=0;i<30;i++)
 cholesterol.push(new Cholesterol(Math.random()*Math.PI*2))
+
+/* glycoproteins */
 
 for(let i=0;i<6;i++)
 glycoproteins.push(new Glycoprotein(Math.random()*Math.PI*2))
@@ -250,8 +320,11 @@ function animate(){
 ctx.clearRect(0,0,canvas.width,canvas.height)
 
 lipids.forEach(l=>{l.move();l.draw()})
+
 proteins.forEach(p=>{p.move();p.draw()})
+
 cholesterol.forEach(c=>{c.move();c.draw()})
+
 glycoproteins.forEach(g=>{g.move();g.draw()})
 
 requestAnimationFrame(animate)
