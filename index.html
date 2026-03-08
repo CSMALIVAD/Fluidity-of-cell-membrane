@@ -32,36 +32,26 @@ font-size:14px;
 #inner{top:66vh}
 #cyto{bottom:120px}
 
-/* legend */
-
 .legend{
-
 position:absolute;
 bottom:10px;
 left:50%;
 transform:translateX(-50%);
-
 background:rgba(0,0,0,0.6);
 padding:12px 16px;
-
 border-radius:10px;
-
 font-size:13px;
 text-align:left;
-
 display:grid;
 grid-template-columns:1fr 1fr;
 gap:6px 20px;
-
 }
 
 .sym{
-
 display:inline-block;
 width:14px;
 height:14px;
 margin-right:6px;
-
 }
 
 .head{background:#4dabf7}
@@ -86,7 +76,6 @@ margin-right:6px;
 <div id="cyto" class="label">Cytoplasm</div>
 
 <div class="legend">
-
 <div><span class="sym head"></span>Phospholipid head</div>
 <div><span class="sym tail"></span>Fatty acid tails</div>
 <div><span class="sym chol"></span>Cholesterol</div>
@@ -94,7 +83,6 @@ margin-right:6px;
 <div><span class="sym carrier"></span>Transport protein (carrier)</div>
 <div><span class="sym integral"></span>Integral membrane protein</div>
 <div><span class="sym ion"></span>Transported ions</div>
-
 </div>
 
 <script>
@@ -111,9 +99,7 @@ window.addEventListener("resize",resize)
 
 const mid=()=>canvas.height/2
 
-/* ======================
-PHOSPHOLIPID
-====================== */
+/* PHOSPHOLIPID */
 
 class Lipid{
 
@@ -137,13 +123,9 @@ this.rot+=0.03
 if(this.x<0) this.x=canvas.width
 if(this.x>canvas.width) this.x=0
 
-/* very rare flip flop */
-
 if(!this.flip && Math.random()<0.000003){
-
 this.flip=true
 this.flipProgress=0
-
 }
 
 if(this.flip){
@@ -151,10 +133,8 @@ if(this.flip){
 this.flipProgress+=0.02
 
 if(this.flipProgress>=1){
-
 this.flip=false
 this.leaflet=this.leaflet==="outer"?"inner":"outer"
-
 }
 
 }
@@ -169,7 +149,6 @@ if(this.flip){
 
 const start=this.leaflet==="outer"?mid()-85:mid()+85
 const end=this.leaflet==="outer"?mid()+85:mid()-85
-
 y=start+(end-start)*this.flipProgress
 
 }else{
@@ -186,7 +165,6 @@ ctx.translate(this.x,y)
 ctx.rotate(Math.sin(this.rot)*0.2)
 
 ctx.fillStyle="#4dabf7"
-
 ctx.beginPath()
 ctx.arc(0,0,6,0,Math.PI*2)
 ctx.fill()
@@ -195,7 +173,6 @@ ctx.strokeStyle="#ffd43b"
 ctx.lineWidth=2
 
 ctx.beginPath()
-
 ctx.moveTo(0,0)
 ctx.lineTo(-4,dir*34)
 
@@ -210,17 +187,13 @@ ctx.restore()
 
 }
 
-/* ======================
-CHOLESTEROL
-====================== */
+/* CHOLESTEROL */
 
 class Cholesterol{
 
 constructor(x){
-
 this.x=x
 this.v=(Math.random()-0.5)*0.1
-
 }
 
 move(){
@@ -233,37 +206,28 @@ if(this.x>canvas.width) this.x=0
 }
 
 draw(){
-
 ctx.fillStyle="#ffe066"
 ctx.fillRect(this.x-3,mid()-24,6,48)
-
 }
 
 }
 
-/* ======================
-ION CHANNEL
-====================== */
+/* ION CHANNEL */
 
 class IonChannel{
 
 constructor(x){
-
 this.x=x
 this.ions=[]
-
 }
 
 move(){
 
 if(Math.random()<0.03){
-
 this.ions.push({y:mid()-90})
-
 }
 
 this.ions.forEach(i=>i.y+=1.6)
-
 this.ions=this.ions.filter(i=>i.y<mid()+90)
 
 }
@@ -288,43 +252,70 @@ ctx.fill()
 
 }
 
-/* ======================
-TRANSPORT PROTEIN
-====================== */
+/* CARRIER PROTEIN */
 
 class Carrier{
 
 constructor(x){
+
 this.x=x
+this.v=(Math.random()-0.5)*0.06
 this.phase=0
+
 }
 
 move(){
 
+this.x+=this.v
 this.phase+=0.05
+
+if(this.x<0) this.x=canvas.width
+if(this.x>canvas.width) this.x=0
 
 }
 
 draw(){
 
+const width=16+Math.sin(this.phase)*4
+
 ctx.fillStyle="#ff922b"
 
 ctx.beginPath()
-ctx.ellipse(this.x,mid(),16,80,0,0,Math.PI*2)
+ctx.ellipse(this.x,mid(),width,80,0,0,Math.PI*2)
+ctx.fill()
+
+ctx.fillStyle="#ffc078"
+
+ctx.beginPath()
+ctx.arc(this.x,mid()-105,6,0,Math.PI*2)
+ctx.fill()
+
+ctx.beginPath()
+ctx.arc(this.x,mid()+105,6,0,Math.PI*2)
 ctx.fill()
 
 }
 
 }
 
-/* ======================
-INTEGRAL PROTEIN
-====================== */
+/* INTEGRAL PROTEIN */
 
 class Integral{
 
 constructor(x){
+
 this.x=x
+this.v=(Math.random()-0.5)*0.08
+
+}
+
+move(){
+
+this.x+=this.v
+
+if(this.x<0) this.x=canvas.width
+if(this.x>canvas.width) this.x=0
+
 }
 
 draw(){
@@ -332,33 +323,35 @@ draw(){
 ctx.fillStyle="#9775fa"
 
 ctx.beginPath()
-ctx.roundRect(this.x-10,mid()-95,20,190,10)
+ctx.roundRect(this.x-12,mid()-95,24,190,12)
+ctx.fill()
+
+ctx.fillStyle="#b197fc"
+
+ctx.beginPath()
+ctx.arc(this.x,mid()-105,6,0,Math.PI*2)
+ctx.fill()
+
+ctx.beginPath()
+ctx.arc(this.x,mid()+105,6,0,Math.PI*2)
 ctx.fill()
 
 }
 
 }
 
-/* arrays */
+/* ARRAYS */
 
 const lipids=[]
 const cholesterol=[]
 
-/* dense phospholipids */
-
 for(let x=0;x<canvas.width;x+=8){
-
 lipids.push(new Lipid(x,"outer"))
 lipids.push(new Lipid(x,"inner"))
-
 }
-
-/* cholesterol */
 
 for(let i=0;i<70;i++)
 cholesterol.push(new Cholesterol(Math.random()*canvas.width))
-
-/* proteins */
 
 const channels=[
 new IonChannel(canvas.width*0.25),
@@ -366,10 +359,9 @@ new IonChannel(canvas.width*0.75)
 ]
 
 const carrier=new Carrier(canvas.width*0.5)
-
 const integral=new Integral(canvas.width*0.65)
 
-/* animation */
+/* ANIMATION */
 
 function animate(){
 
@@ -386,6 +378,7 @@ channels.forEach(c=>{c.move();c.draw()})
 carrier.move()
 carrier.draw()
 
+integral.move()
 integral.draw()
 
 requestAnimationFrame(animate)
