@@ -1,412 +1,287 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Human Plasma Membrane Simulation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+
 body{
 margin:0;
 background:#020617;
-overflow:hidden;
 font-family:Arial;
+color:white;
+text-align:center;
 }
 
 canvas{
+width:100vw;
+height:100vh;
 display:block;
 }
+
+.label{
+position:absolute;
+left:50%;
+transform:translateX(-50%);
+font-size:14px;
+}
+
+#extra{top:20px}
+#outer{top:35vh}
+#core{top:50vh}
+#inner{top:65vh}
+#cyto{bottom:20px}
+
 </style>
 </head>
 
 <body>
 
-<canvas id="c"></canvas>
+<canvas id="membrane"></canvas>
+
+<div id="extra" class="label">Extracellular space</div>
+<div id="outer" class="label">Outer leaflet (hydrophilic heads)</div>
+<div id="core" class="label">Hydrophobic core</div>
+<div id="inner" class="label">Inner leaflet (hydrophilic heads)</div>
+<div id="cyto" class="label">Cytoplasm</div>
 
 <script>
 
-const canvas=document.getElementById("c")
-const gl=canvas.getContext("webgl")
+const canvas=document.getElementById("membrane")
+const ctx=canvas.getContext("2d")
 
 function resize(){
 canvas.width=window.innerWidth
 canvas.height=window.innerHeight
-gl.viewport(0,0,canvas.width,canvas.height)
 }
 resize()
 window.addEventListener("resize",resize)
 
-let time=0
+const mid=()=>canvas.height/2
 
-const lipids=[]
-const chol=[]
-const proteins=[]
-const glyco=[]
-const actin=[]
-const rafts=[]
-
-const TOP=0
-const BOTTOM=1
-
-function rand(a,b){
-return a+Math.random()*(b-a)
-}
+/* =========================
+PHOSPHOLIPID
+========================= */
 
 class Lipid{
 
-constructor(x,y,leaflet,type){
+constructor(x,leaflet){
 
 this.x=x
-this.y=y
 this.leaflet=leaflet
-this.type=type
-
-this.unsaturated=Math.random()<0.6
-
-this.vx=rand(-0.2,0.2)
-this.vy=rand(-0.1,0.1)
-
-}
-
-move(fluid){
-
-this.x+=this.vx*fluid
-this.y+=this.vy*fluid
-
-if(this.x<0) this.x=canvas.width
-if(this.x>canvas.width) this.x=0
-
-}
-
-draw(ctx){
-
-ctx.save()
-
-ctx.translate(this.x,this.y)
-
-ctx.fillStyle=this.type
-
-ctx.beginPath()
-ctx.arc(0,0,4,0,Math.PI*2)
-ctx.fill()
-
-ctx.strokeStyle="#ffc870"
-ctx.lineWidth=2
-
-ctx.beginPath()
-ctx.moveTo(-2,4)
-
-if(this.unsaturated)
-ctx.quadraticCurveTo(-8,10,-3,18)
-else
-ctx.lineTo(-3,18)
-
-ctx.stroke()
-
-ctx.beginPath()
-ctx.moveTo(2,4)
-
-if(this.unsaturated)
-ctx.quadraticCurveTo(8,10,3,18)
-else
-ctx.lineTo(3,18)
-
-ctx.stroke()
-
-ctx.restore()
-
-}
-
-}
-
-class Cholesterol{
-
-constructor(x,y){
-
-this.x=x
-this.y=y
-
-this.vx=rand(-0.1,0.1)
+this.v=(Math.random()-0.5)*0.4
 
 }
 
 move(){
 
-this.x+=this.vx
+this.x+=this.v
 
 if(this.x<0) this.x=canvas.width
 if(this.x>canvas.width) this.x=0
 
 }
 
-draw(ctx){
+draw(){
 
-ctx.fillStyle="#b084ff"
+const headY=this.leaflet==="outer"?mid()-70:mid()+70
+const dir=this.leaflet==="outer"?1:-1
 
-ctx.fillRect(this.x-2,this.y-7,4,14)
+/* head */
+
+ctx.fillStyle="#4dabf7"
+
+ctx.beginPath()
+ctx.arc(this.x,headY,5,0,Math.PI*2)
+ctx.fill()
+
+/* tails */
+
+ctx.strokeStyle="#ffd43b"
+ctx.lineWidth=2
+
+ctx.beginPath()
+
+ctx.moveTo(this.x,headY)
+ctx.lineTo(this.x-3,headY+dir*25)
+
+ctx.moveTo(this.x,headY)
+ctx.lineTo(this.x+3,headY+dir*25)
+
+ctx.stroke()
 
 }
 
 }
+
+/* =========================
+CHOLESTEROL
+========================= */
+
+class Cholesterol{
+
+constructor(x){
+this.x=x
+this.v=(Math.random()-0.5)*0.2
+}
+
+move(){
+
+this.x+=this.v
+
+if(this.x<0) this.x=canvas.width
+if(this.x>canvas.width) this.x=0
+
+}
+
+draw(){
+
+const y=mid()
+
+ctx.fillStyle="#ffe066"
+
+ctx.fillRect(this.x-2,y-15,4,30)
+
+}
+
+}
+
+/* =========================
+INTEGRAL PROTEIN
+========================= */
 
 class Protein{
 
 constructor(x){
-
 this.x=x
-this.vx=rand(-0.1,0.1)
-
+this.v=(Math.random()-0.5)*0.3
 }
 
 move(){
 
-this.x+=this.vx
+this.x+=this.v
 
 if(this.x<0) this.x=canvas.width
 if(this.x>canvas.width) this.x=0
 
 }
 
-draw(ctx){
+draw(){
 
-let mid=canvas.height/2
-
-ctx.fillStyle="#42ff8c"
+ctx.fillStyle="#845ef7"
 
 ctx.beginPath()
-ctx.roundRect(this.x-10,mid-70,20,140,10)
+ctx.roundRect(this.x-8,mid()-80,16,160,10)
 ctx.fill()
 
 }
 
 }
 
-class Glyco{
+/* =========================
+GLYCOPROTEIN
+========================= */
 
-constructor(x,y){
+class Glycoprotein{
 
+constructor(x){
 this.x=x
-this.y=y
-
 }
 
-draw(ctx){
+move(){
+this.x+=(Math.random()-0.5)*0.3
+}
 
-ctx.strokeStyle="#ff7ac8"
-ctx.lineWidth=2
+draw(){
+
+ctx.fillStyle="#845ef7"
 
 ctx.beginPath()
+ctx.arc(this.x,mid()-80,8,0,Math.PI*2)
+ctx.fill()
 
-ctx.moveTo(this.x,this.y)
+ctx.strokeStyle="#40c057"
 
-for(let i=0;i<6;i++){
-
-let dx=Math.sin(time*0.05+i)*5
-
-ctx.lineTo(this.x+dx,this.y-10*(i+1))
-
-}
-
+ctx.beginPath()
+ctx.moveTo(this.x,mid()-80)
+ctx.lineTo(this.x,mid()-110)
 ctx.stroke()
 
 }
 
 }
 
-class Actin{
+/* =========================
+PERIPHERAL PROTEIN
+========================= */
 
-constructor(x,y){
+class Peripheral{
 
+constructor(x){
 this.x=x
-this.y=y
-
 }
 
-draw(ctx){
+move(){
+this.x+=(Math.random()-0.5)*0.4
+}
 
-ctx.strokeStyle="#ff4040"
-ctx.lineWidth=2
+draw(){
+
+ctx.fillStyle="#f06595"
 
 ctx.beginPath()
-
-ctx.moveTo(this.x,this.y)
-
-ctx.lineTo(
-this.x+40,
-this.y+Math.sin(time*0.03)*8
-)
-
-ctx.stroke()
-
-}
-
-}
-
-class Raft{
-
-constructor(){
-
-this.x=Math.random()*canvas.width
-this.r=rand(30,60)
-this.life=rand(400,800)
-
-}
-
-update(){
-
-this.life--
-
-}
-
-draw(ctx){
-
-ctx.beginPath()
-
-ctx.arc(this.x,canvas.height/2,this.r,0,Math.PI*2)
-
-ctx.fillStyle="rgba(255,255,255,0.03)"
-
+ctx.arc(this.x,mid()+95,6,0,Math.PI*2)
 ctx.fill()
 
 }
 
 }
 
-const ctx=canvas.getContext("2d")
+/* arrays */
 
-function init(){
+const lipids=[]
+const cholesterol=[]
+const proteins=[]
+const glycoproteins=[]
+const peripherals=[]
 
-let lipidCount=500
-
-for(let i=0;i<lipidCount;i++){
-
-let x=Math.random()*canvas.width
-
-if(i<lipidCount/2){
-
-let y=canvas.height/2-40-rand(0,25)
-
-lipids.push(new Lipid(x,y,TOP,"#7fd3ff"))
-
-}else{
-
-let y=canvas.height/2+40+rand(0,25)
-
-lipids.push(new Lipid(x,y,BOTTOM,"#ffd580"))
-
+for(let i=0;i<120;i++){
+lipids.push(new Lipid(Math.random()*canvas.width,"outer"))
+lipids.push(new Lipid(Math.random()*canvas.width,"inner"))
 }
 
-}
+for(let i=0;i<30;i++)
+cholesterol.push(new Cholesterol(Math.random()*canvas.width))
 
-for(let i=0;i<180;i++){
+for(let i=0;i<8;i++)
+proteins.push(new Protein(Math.random()*canvas.width))
 
-chol.push(
-new Cholesterol(
-Math.random()*canvas.width,
-canvas.height/2+rand(-30,30)
-))
+for(let i=0;i<6;i++)
+glycoproteins.push(new Glycoprotein(Math.random()*canvas.width))
 
-}
+for(let i=0;i<8;i++)
+peripherals.push(new Peripheral(Math.random()*canvas.width))
 
-for(let i=0;i<25;i++){
-
-proteins.push(
-new Protein(Math.random()*canvas.width)
-)
-
-}
-
-for(let i=0;i<60;i++){
-
-glyco.push(
-new Glyco(
-Math.random()*canvas.width,
-canvas.height/2-80
-))
-
-}
-
-for(let i=0;i<40;i++){
-
-actin.push(
-new Actin(
-Math.random()*canvas.width,
-canvas.height/2+90
-))
-
-}
-
-}
-
-init()
-
-function fluidity(){
-
-return 0.6+Math.sin(time*0.01)*0.15
-
-}
-
-function updateRafts(){
-
-if(Math.random()<0.01)
-rafts.push(new Raft())
-
-rafts.forEach((r,i)=>{
-
-r.update()
-
-if(r.life<0)
-rafts.splice(i,1)
-
-})
-
-}
-
-function drawBilayer(){
-
-ctx.fillStyle="rgba(255,255,255,0.04)"
-
-ctx.fillRect(
-0,
-canvas.height/2-80,
-canvas.width,
-160
-)
-
-}
+/* =========================
+ANIMATION
+========================= */
 
 function animate(){
 
-time++
-
 ctx.clearRect(0,0,canvas.width,canvas.height)
 
-drawBilayer()
+/* membrane core shading */
 
-updateRafts()
+ctx.fillStyle="rgba(255,255,255,0.05)"
+ctx.fillRect(0,mid()-60,canvas.width,120)
 
-rafts.forEach(r=>r.draw(ctx))
+/* movement */
 
-let f=fluidity()
-
-lipids.forEach(l=>{
-l.move(f)
-l.draw(ctx)
-})
-
-chol.forEach(c=>{
-c.move()
-c.draw(ctx)
-})
-
-proteins.forEach(p=>{
-p.move()
-p.draw(ctx)
-})
-
-glyco.forEach(g=>g.draw(ctx))
-
-actin.forEach(a=>a.draw(ctx))
+lipids.forEach(l=>{l.move();l.draw()})
+cholesterol.forEach(c=>{c.move();c.draw()})
+proteins.forEach(p=>{p.move();p.draw()})
+glycoproteins.forEach(g=>{g.move();g.draw()})
+peripherals.forEach(p=>{p.move();p.draw()})
 
 requestAnimationFrame(animate)
 
