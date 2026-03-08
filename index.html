@@ -1,175 +1,189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Fluid Mosaic Membrane Simulator</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body{
 margin:0;
 background:#020617;
 color:white;
-font-family:Arial;
 text-align:center;
+font-family:Arial;
 }
-
-h2{
-margin:8px;
-}
-
 canvas{
-display:block;
-margin:auto;
 width:96vw;
 height:90vh;
 border:2px solid white;
+display:block;
+margin:auto;
 }
 </style>
 </head>
 
 <body>
 
-<h2>3D Fluid Mosaic Plasma Membrane (WebGL Simulation)</h2>
-<canvas id="glcanvas"></canvas>
+<h2>Fluid Mosaic Plasma Membrane Simulation</h2>
+
+<canvas id="membrane"></canvas>
 
 <script>
 
-/* ===========================
-WEBGL INITIALIZATION
-=========================== */
-
-const canvas = document.getElementById("glcanvas")
-const gl = canvas.getContext("webgl")
+const canvas = document.getElementById("membrane")
+const ctx = canvas.getContext("2d")
 
 function resize(){
 canvas.width = window.innerWidth*0.96
 canvas.height = window.innerHeight*0.9
-gl.viewport(0,0,canvas.width,canvas.height)
 }
-
 resize()
 window.addEventListener("resize",resize)
 
-if(!gl){
-alert("WebGL not supported")
-}
+const centerX=()=>canvas.width/2
+const centerY=()=>canvas.height/2
 
-/* ===========================
-SHADERS
-=========================== */
+const outerRadius=()=>Math.min(canvas.width,canvas.height)/3
+const innerRadius=()=>outerRadius()-25
 
-const vertexShaderSource = `
-attribute vec3 position;
-uniform float time;
-void main(){
-float vibration = sin(time + position.x*4.0)*0.02;
-gl_Position = vec4(position.x, position.y + vibration, position.z, 1.0);
-gl_PointSize = 6.0;
-}
-`
 
-const fragmentShaderSource = `
-precision mediump float;
-void main(){
-gl_FragColor = vec4(0.3,0.7,1.0,1.0);
-}
-`
+class Lipid{
 
-function compileShader(type, source){
+constructor(angle,leaflet){
 
-const shader = gl.createShader(type)
-gl.shaderSource(shader,source)
-gl.compileShader(shader)
-
-return shader
+this.angle=angle
+this.leaflet=leaflet
 
 }
 
-const vertexShader = compileShader(gl.VERTEX_SHADER,vertexShaderSource)
-const fragmentShader = compileShader(gl.FRAGMENT_SHADER,fragmentShaderSource)
+move(){
 
-const program = gl.createProgram()
-
-gl.attachShader(program,vertexShader)
-gl.attachShader(program,fragmentShader)
-
-gl.linkProgram(program)
-gl.useProgram(program)
-
-/* ===========================
-PARTICLE SYSTEM (LIPIDS)
-=========================== */
-
-const particleCount = 2000
-const positions = []
-
-for(let i=0;i<particleCount;i++){
-
-let angle = Math.random()*Math.PI*2
-let r = 0.6 + (Math.random()-0.5)*0.05
-
-let x = r*Math.cos(angle)
-let y = r*Math.sin(angle)
-
-positions.push(x,y,0)
+this.angle += (Math.random()-0.5)*0.002
 
 }
 
-/* GPU buffer */
+draw(){
 
-const positionBuffer = gl.createBuffer()
-gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer)
-gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.DYNAMIC_DRAW)
+const r=this.leaflet=="outer"?outerRadius():innerRadius()
 
-const positionLocation = gl.getAttribLocation(program,"position")
+const x=centerX()+r*Math.cos(this.angle)
+const y=centerY()+r*Math.sin(this.angle)
 
-gl.enableVertexAttribArray(positionLocation)
+const dir=this.leaflet=="outer"?-1:1
 
-gl.vertexAttribPointer(positionLocation,3,gl.FLOAT,false,0,0)
+/* head */
 
-/* ===========================
-TIME UNIFORM
-=========================== */
+ctx.fillStyle="#4dabf7"
+ctx.beginPath()
+ctx.arc(x,y,4,0,Math.PI*2)
+ctx.fill()
 
-const timeLocation = gl.getUniformLocation(program,"time")
+/* tails */
 
-let time = 0
+ctx.strokeStyle="#ffd43b"
+ctx.beginPath()
 
-/* ===========================
-DIFFUSION SIMULATION
-=========================== */
+ctx.moveTo(x,y)
+ctx.lineTo(x+dir*10*Math.cos(this.angle),y+dir*10*Math.sin(this.angle))
 
-function diffuse(){
+ctx.moveTo(x,y)
+ctx.lineTo(x+dir*10*Math.cos(this.angle+0.2),y+dir*10*Math.sin(this.angle+0.2))
 
-for(let i=0;i<positions.length;i+=3){
-
-positions[i]+= (Math.random()-0.5)*0.002
-positions[i+1]+= (Math.random()-0.5)*0.002
+ctx.stroke()
 
 }
 
 }
 
-/* ===========================
-ANIMATION LOOP
-=========================== */
+
+class Protein{
+
+constructor(angle){
+this.angle=angle
+}
+
+move(){
+this.angle+=(Math.random()-0.5)*0.001
+}
+
+draw(){
+
+const r=(outerRadius()+innerRadius())/2
+
+const x=centerX()+r*Math.cos(this.angle)
+const y=centerY()+r*Math.sin(this.angle)
+
+ctx.fillStyle="#845ef7"
+
+ctx.beginPath()
+ctx.arc(x,y,8,0,Math.PI*2)
+ctx.fill()
+
+}
+
+}
+
+
+class Cholesterol{
+
+constructor(angle){
+this.angle=angle
+}
+
+move(){
+this.angle+=(Math.random()-0.5)*0.0008
+}
+
+draw(){
+
+const r=(outerRadius()+innerRadius())/2
+
+const x=centerX()+r*Math.cos(this.angle)
+const y=centerY()+r*Math.sin(this.angle)
+
+ctx.fillStyle="#ffe066"
+ctx.fillRect(x-2,y-6,4,12)
+
+}
+
+}
+
+
+const lipids=[]
+const proteins=[]
+const cholesterol=[]
+
+
+for(let i=0;i<180;i++){
+
+lipids.push(new Lipid(Math.random()*Math.PI*2,"outer"))
+lipids.push(new Lipid(Math.random()*Math.PI*2,"inner"))
+
+}
+
+for(let i=0;i<12;i++)
+proteins.push(new Protein(Math.random()*Math.PI*2))
+
+for(let i=0;i<40;i++)
+cholesterol.push(new Cholesterol(Math.random()*Math.PI*2))
+
 
 function animate(){
 
-time += 0.03
+ctx.clearRect(0,0,canvas.width,canvas.height)
 
-diffuse()
+lipids.forEach(l=>{
+l.move()
+l.draw()
+})
 
-gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer)
-gl.bufferSubData(gl.ARRAY_BUFFER,0,new Float32Array(positions))
+proteins.forEach(p=>{
+p.move()
+p.draw()
+})
 
-gl.clearColor(0.02,0.03,0.07,1)
-gl.clear(gl.COLOR_BUFFER_BIT)
-
-gl.uniform1f(timeLocation,time)
-
-gl.drawArrays(gl.POINTS,0,particleCount)
+cholesterol.forEach(c=>{
+c.move()
+c.draw()
+})
 
 requestAnimationFrame(animate)
 
