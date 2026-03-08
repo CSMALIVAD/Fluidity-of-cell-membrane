@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Human Plasma Membrane – Dynamic Model</title>
+<title>Human Plasma Membrane Simulation</title>
 
 <style>
-
 body{
 margin:0;
-background:#050b1e;
+background:#020617;
 overflow:hidden;
 font-family:Arial;
 }
@@ -17,24 +16,23 @@ font-family:Arial;
 canvas{
 display:block;
 }
-
 </style>
 </head>
 
 <body>
 
-<canvas id="membrane"></canvas>
+<canvas id="c"></canvas>
 
 <script>
 
-const canvas=document.getElementById("membrane")
-const ctx=canvas.getContext("2d")
+const canvas=document.getElementById("c")
+const gl=canvas.getContext("webgl")
 
 function resize(){
 canvas.width=window.innerWidth
 canvas.height=window.innerHeight
+gl.viewport(0,0,canvas.width,canvas.height)
 }
-
 resize()
 window.addEventListener("resize",resize)
 
@@ -44,13 +42,15 @@ const lipids=[]
 const chol=[]
 const proteins=[]
 const glyco=[]
-const cytoskeleton=[]
+const actin=[]
 const rafts=[]
 
 const TOP=0
 const BOTTOM=1
 
-const mid=()=>canvas.height/2
+function rand(a,b){
+return a+Math.random()*(b-a)
+}
 
 class Lipid{
 
@@ -59,15 +59,12 @@ constructor(x,y,leaflet,type){
 this.x=x
 this.y=y
 this.leaflet=leaflet
-
 this.type=type
 
 this.unsaturated=Math.random()<0.6
 
-this.vx=(Math.random()-0.5)*0.4
-this.vy=(Math.random()-0.5)*0.2
-
-this.angle=Math.random()*Math.PI
+this.vx=rand(-0.2,0.2)
+this.vy=rand(-0.1,0.1)
 
 }
 
@@ -79,49 +76,38 @@ this.y+=this.vy*fluid
 if(this.x<0) this.x=canvas.width
 if(this.x>canvas.width) this.x=0
 
-this.angle+=0.02
-
 }
 
-draw(){
+draw(ctx){
 
 ctx.save()
 
 ctx.translate(this.x,this.y)
-ctx.rotate(this.angle)
 
-let headColor="#7fd3ff"
-
-if(this.type=="SM") headColor="#9be0ff"
-if(this.type=="PS") headColor="#ff9bb0"
-if(this.type=="PE") headColor="#ffd580"
-
-ctx.fillStyle=headColor
+ctx.fillStyle=this.type
 
 ctx.beginPath()
 ctx.arc(0,0,4,0,Math.PI*2)
 ctx.fill()
 
-ctx.strokeStyle="#ffcc66"
+ctx.strokeStyle="#ffc870"
 ctx.lineWidth=2
 
 ctx.beginPath()
-
-ctx.moveTo(-2,5)
+ctx.moveTo(-2,4)
 
 if(this.unsaturated)
-ctx.quadraticCurveTo(-7,10,-3,18)
+ctx.quadraticCurveTo(-8,10,-3,18)
 else
 ctx.lineTo(-3,18)
 
 ctx.stroke()
 
 ctx.beginPath()
-
-ctx.moveTo(2,5)
+ctx.moveTo(2,4)
 
 if(this.unsaturated)
-ctx.quadraticCurveTo(7,10,3,18)
+ctx.quadraticCurveTo(8,10,3,18)
 else
 ctx.lineTo(3,18)
 
@@ -140,7 +126,7 @@ constructor(x,y){
 this.x=x
 this.y=y
 
-this.vx=(Math.random()-0.5)*0.2
+this.vx=rand(-0.1,0.1)
 
 }
 
@@ -153,9 +139,9 @@ if(this.x>canvas.width) this.x=0
 
 }
 
-draw(){
+draw(ctx){
 
-ctx.fillStyle="#c084ff"
+ctx.fillStyle="#b084ff"
 
 ctx.fillRect(this.x-2,this.y-7,4,14)
 
@@ -168,7 +154,7 @@ class Protein{
 constructor(x){
 
 this.x=x
-this.vx=(Math.random()-0.5)*0.2
+this.vx=rand(-0.1,0.1)
 
 }
 
@@ -181,22 +167,21 @@ if(this.x>canvas.width) this.x=0
 
 }
 
-draw(){
+draw(ctx){
 
-let top=mid()-70
-let bottom=mid()+70
+let mid=canvas.height/2
 
 ctx.fillStyle="#42ff8c"
 
 ctx.beginPath()
-ctx.roundRect(this.x-10,top,20,bottom-top,10)
+ctx.roundRect(this.x-10,mid-70,20,140,10)
 ctx.fill()
 
 }
 
 }
 
-class Glycoprotein{
+class Glyco{
 
 constructor(x,y){
 
@@ -205,7 +190,7 @@ this.y=y
 
 }
 
-draw(){
+draw(ctx){
 
 ctx.strokeStyle="#ff7ac8"
 ctx.lineWidth=2
@@ -228,7 +213,7 @@ ctx.stroke()
 
 }
 
-class Cytoskeleton{
+class Actin{
 
 constructor(x,y){
 
@@ -237,12 +222,13 @@ this.y=y
 
 }
 
-draw(){
+draw(ctx){
 
 ctx.strokeStyle="#ff4040"
 ctx.lineWidth=2
 
 ctx.beginPath()
+
 ctx.moveTo(this.x,this.y)
 
 ctx.lineTo(
@@ -256,13 +242,13 @@ ctx.stroke()
 
 }
 
-class LipidRaft{
+class Raft{
 
 constructor(){
 
 this.x=Math.random()*canvas.width
-this.radius=40+Math.random()*30
-this.life=500+Math.random()*500
+this.r=rand(30,60)
+this.life=rand(400,800)
 
 }
 
@@ -272,21 +258,25 @@ this.life--
 
 }
 
-draw(){
+draw(ctx){
 
 ctx.beginPath()
-ctx.arc(this.x,mid(),this.radius,0,Math.PI*2)
+
+ctx.arc(this.x,canvas.height/2,this.r,0,Math.PI*2)
 
 ctx.fillStyle="rgba(255,255,255,0.03)"
+
 ctx.fill()
 
 }
 
 }
 
+const ctx=canvas.getContext("2d")
+
 function init(){
 
-let lipidCount=400
+let lipidCount=500
 
 for(let i=0;i<lipidCount;i++){
 
@@ -294,55 +284,54 @@ let x=Math.random()*canvas.width
 
 if(i<lipidCount/2){
 
-let y=mid()-40-Math.random()*25
+let y=canvas.height/2-40-rand(0,25)
 
-let type=Math.random()<0.5?"PC":"SM"
-
-lipids.push(new Lipid(x,y,TOP,type))
+lipids.push(new Lipid(x,y,TOP,"#7fd3ff"))
 
 }else{
 
-let y=mid()+40+Math.random()*25
+let y=canvas.height/2+40+rand(0,25)
 
-let type=Math.random()<0.5?"PE":"PS"
-
-lipids.push(new Lipid(x,y,BOTTOM,type))
+lipids.push(new Lipid(x,y,BOTTOM,"#ffd580"))
 
 }
 
 }
 
-let cholCount=140
+for(let i=0;i<180;i++){
 
-for(let i=0;i<cholCount;i++){
-
-let x=Math.random()*canvas.width
-let y=mid()+Math.random()*60-30
-
-chol.push(new Cholesterol(x,y))
-
-}
-
-for(let i=0;i<20;i++){
-
-proteins.push(new Protein(Math.random()*canvas.width))
-
-}
-
-for(let i=0;i<50;i++){
-
-glyco.push(new Glycoprotein(
+chol.push(
+new Cholesterol(
 Math.random()*canvas.width,
-mid()-80
+canvas.height/2+rand(-30,30)
+))
+
+}
+
+for(let i=0;i<25;i++){
+
+proteins.push(
+new Protein(Math.random()*canvas.width)
+)
+
+}
+
+for(let i=0;i<60;i++){
+
+glyco.push(
+new Glyco(
+Math.random()*canvas.width,
+canvas.height/2-80
 ))
 
 }
 
 for(let i=0;i<40;i++){
 
-cytoskeleton.push(new Cytoskeleton(
+actin.push(
+new Actin(
 Math.random()*canvas.width,
-mid()+90
+canvas.height/2+90
 ))
 
 }
@@ -353,7 +342,23 @@ init()
 
 function fluidity(){
 
-return 0.6+Math.sin(time*0.01)*0.2
+return 0.6+Math.sin(time*0.01)*0.15
+
+}
+
+function updateRafts(){
+
+if(Math.random()<0.01)
+rafts.push(new Raft())
+
+rafts.forEach((r,i)=>{
+
+r.update()
+
+if(r.life<0)
+rafts.splice(i,1)
+
+})
 
 }
 
@@ -363,24 +368,10 @@ ctx.fillStyle="rgba(255,255,255,0.04)"
 
 ctx.fillRect(
 0,
-mid()-80,
+canvas.height/2-80,
 canvas.width,
 160
 )
-
-}
-
-function updateRafts(){
-
-if(Math.random()<0.01)
-rafts.push(new LipidRaft())
-
-rafts.forEach((r,i)=>{
-r.update()
-
-if(r.life<0)
-rafts.splice(i,1)
-})
 
 }
 
@@ -394,28 +385,28 @@ drawBilayer()
 
 updateRafts()
 
-rafts.forEach(r=>r.draw())
+rafts.forEach(r=>r.draw(ctx))
 
 let f=fluidity()
 
 lipids.forEach(l=>{
 l.move(f)
-l.draw()
+l.draw(ctx)
 })
 
 chol.forEach(c=>{
 c.move()
-c.draw()
+c.draw(ctx)
 })
 
 proteins.forEach(p=>{
 p.move()
-p.draw()
+p.draw(ctx)
 })
 
-glyco.forEach(g=>g.draw())
+glyco.forEach(g=>g.draw(ctx))
 
-cytoskeleton.forEach(a=>a.draw())
+actin.forEach(a=>a.draw(ctx))
 
 requestAnimationFrame(animate)
 
