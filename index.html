@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Molecular Lipid Bilayer Simulator</title>
+<title>3D Fluid Mosaic Membrane Simulator</title>
 
 <style>
 body{
@@ -21,267 +21,155 @@ margin:8px;
 canvas{
 display:block;
 margin:auto;
-border:2px solid white;
 width:96vw;
-height:85vh;
-background:#020617;
+height:90vh;
+border:2px solid white;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Molecular-Scale Lipid Bilayer Simulation</h2>
-<canvas id="membrane"></canvas>
+<h2>3D Fluid Mosaic Plasma Membrane (WebGL Simulation)</h2>
+<canvas id="glcanvas"></canvas>
 
 <script>
 
-const canvas = document.getElementById("membrane")
-const ctx = canvas.getContext("2d")
+/* ===========================
+WEBGL INITIALIZATION
+=========================== */
+
+const canvas = document.getElementById("glcanvas")
+const gl = canvas.getContext("webgl")
 
 function resize(){
 canvas.width = window.innerWidth*0.96
-canvas.height = window.innerHeight*0.85
+canvas.height = window.innerHeight*0.9
+gl.viewport(0,0,canvas.width,canvas.height)
 }
+
 resize()
 window.addEventListener("resize",resize)
 
-const centerX = () => canvas.width/2
-const centerY = () => canvas.height/2
-
-const outerR = () => Math.min(canvas.width,canvas.height)/3
-const innerR = () => outerR()-28
-
-
-/* =========================
-PHOSPHOLIPID MOLECULE
-========================= */
-
-class Lipid{
-
-constructor(angle,leaflet){
-
-this.angle = angle
-this.leaflet = leaflet
-
-this.kink = Math.random() > 0.6
+if(!gl){
+alert("WebGL not supported")
 }
 
-move(){
+/* ===========================
+SHADERS
+=========================== */
 
-this.angle += (Math.random()-0.5)*0.003
-
+const vertexShaderSource = `
+attribute vec3 position;
+uniform float time;
+void main(){
+float vibration = sin(time + position.x*4.0)*0.02;
+gl_Position = vec4(position.x, position.y + vibration, position.z, 1.0);
+gl_PointSize = 6.0;
 }
+`
 
-draw(){
+const fragmentShaderSource = `
+precision mediump float;
+void main(){
+gl_FragColor = vec4(0.3,0.7,1.0,1.0);
+}
+`
 
-const r = this.leaflet==="outer" ? outerR() : innerR()
+function compileShader(type, source){
 
-const x = centerX()+r*Math.cos(this.angle)
-const y = centerY()+r*Math.sin(this.angle)
+const shader = gl.createShader(type)
+gl.shaderSource(shader,source)
+gl.compileShader(shader)
 
-const dir = this.leaflet==="outer" ? -1 : 1
-
-/* head */
-
-ctx.fillStyle="#4ea8ff"
-ctx.beginPath()
-ctx.arc(x,y,4,0,Math.PI*2)
-ctx.fill()
-
-/* tails */
-
-ctx.strokeStyle="#ffd166"
-ctx.lineWidth=1.5
-
-ctx.beginPath()
-
-if(this.kink){
-
-/* unsaturated fatty acid */
-
-ctx.moveTo(x,y)
-ctx.lineTo(x+dir*8*Math.cos(this.angle),y+dir*8*Math.sin(this.angle))
-ctx.lineTo(x+dir*13*Math.cos(this.angle+0.4),y+dir*13*Math.sin(this.angle+0.4))
-
-}else{
-
-/* saturated */
-
-ctx.moveTo(x,y)
-ctx.lineTo(x+dir*14*Math.cos(this.angle),y+dir*14*Math.sin(this.angle))
+return shader
 
 }
 
-ctx.moveTo(x,y)
-ctx.lineTo(x+dir*12*Math.cos(this.angle-0.25),y+dir*12*Math.sin(this.angle-0.25))
+const vertexShader = compileShader(gl.VERTEX_SHADER,vertexShaderSource)
+const fragmentShader = compileShader(gl.FRAGMENT_SHADER,fragmentShaderSource)
 
-ctx.stroke()
+const program = gl.createProgram()
+
+gl.attachShader(program,vertexShader)
+gl.attachShader(program,fragmentShader)
+
+gl.linkProgram(program)
+gl.useProgram(program)
+
+/* ===========================
+PARTICLE SYSTEM (LIPIDS)
+=========================== */
+
+const particleCount = 2000
+const positions = []
+
+for(let i=0;i<particleCount;i++){
+
+let angle = Math.random()*Math.PI*2
+let r = 0.6 + (Math.random()-0.5)*0.05
+
+let x = r*Math.cos(angle)
+let y = r*Math.sin(angle)
+
+positions.push(x,y,0)
 
 }
 
-}
+/* GPU buffer */
 
+const positionBuffer = gl.createBuffer()
+gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer)
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.DYNAMIC_DRAW)
 
-/* =========================
-CHOLESTEROL
-========================= */
+const positionLocation = gl.getAttribLocation(program,"position")
 
-class Cholesterol{
+gl.enableVertexAttribArray(positionLocation)
 
-constructor(angle){
-this.angle=angle
-}
+gl.vertexAttribPointer(positionLocation,3,gl.FLOAT,false,0,0)
 
-move(){
+/* ===========================
+TIME UNIFORM
+=========================== */
 
-this.angle+=(Math.random()-0.5)*0.001
+const timeLocation = gl.getUniformLocation(program,"time")
 
-}
+let time = 0
 
-draw(){
+/* ===========================
+DIFFUSION SIMULATION
+=========================== */
 
-const r=(outerR()+innerR())/2
+function diffuse(){
 
-const x=centerX()+r*Math.cos(this.angle)
-const y=centerY()+r*Math.sin(this.angle)
+for(let i=0;i<positions.length;i+=3){
 
-ctx.fillStyle="#ffe066"
-ctx.fillRect(x-2,y-6,4,12)
+positions[i]+= (Math.random()-0.5)*0.002
+positions[i+1]+= (Math.random()-0.5)*0.002
 
 }
 
 }
 
-
-/* =========================
-MEMBRANE PROTEIN
-========================= */
-
-class Protein{
-
-constructor(angle){
-
-this.angle=angle
-
-}
-
-move(){
-
-this.angle+=(Math.random()-0.5)*0.0015
-
-}
-
-draw(){
-
-const r=(outerR()+innerR())/2
-
-const x=centerX()+r*Math.cos(this.angle)
-const y=centerY()+r*Math.sin(this.angle)
-
-ctx.fillStyle="#9d4edd"
-
-ctx.beginPath()
-ctx.arc(x,y,8,0,Math.PI*2)
-ctx.fill()
-
-}
-
-}
-
-
-/* =========================
-ION CHANNEL
-========================= */
-
-class Channel{
-
-constructor(angle){
-
-this.angle=angle
-this.open=Math.random()>0.5
-
-}
-
-move(){
-
-this.angle+=(Math.random()-0.5)*0.001
-
-if(Math.random()<0.003){
-
-this.open=!this.open
-
-}
-
-}
-
-draw(){
-
-const r=(outerR()+innerR())/2
-
-const x=centerX()+r*Math.cos(this.angle)
-const y=centerY()+r*Math.sin(this.angle)
-
-ctx.fillStyle="#7b2cbf"
-
-ctx.beginPath()
-ctx.arc(x,y,9,0,Math.PI*2)
-ctx.fill()
-
-if(this.open){
-
-ctx.strokeStyle="#00e5ff"
-
-ctx.beginPath()
-ctx.moveTo(x-3,y)
-ctx.lineTo(x+3,y)
-ctx.stroke()
-
-}
-
-}
-
-}
-
-
-/* =========================
-MOLECULE ARRAYS
-========================= */
-
-const lipids=[]
-const cholesterol=[]
-const proteins=[]
-const channels=[]
-
-for(let i=0;i<260;i++){
-
-lipids.push(new Lipid(Math.random()*Math.PI*2,"outer"))
-lipids.push(new Lipid(Math.random()*Math.PI*2,"inner"))
-
-}
-
-for(let i=0;i<50;i++)
-cholesterol.push(new Cholesterol(Math.random()*Math.PI*2))
-
-for(let i=0;i<18;i++)
-proteins.push(new Protein(Math.random()*Math.PI*2))
-
-for(let i=0;i<8;i++)
-channels.push(new Channel(Math.random()*Math.PI*2))
-
-
-/* =========================
-ANIMATION
-========================= */
+/* ===========================
+ANIMATION LOOP
+=========================== */
 
 function animate(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height)
+time += 0.03
 
-lipids.forEach(l=>{l.move();l.draw()})
-cholesterol.forEach(c=>{c.move();c.draw()})
-proteins.forEach(p=>{p.move();p.draw()})
-channels.forEach(c=>{c.move();c.draw()})
+diffuse()
+
+gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer)
+gl.bufferSubData(gl.ARRAY_BUFFER,0,new Float32Array(positions))
+
+gl.clearColor(0.02,0.03,0.07,1)
+gl.clear(gl.COLOR_BUFFER_BIT)
+
+gl.uniform1f(timeLocation,time)
+
+gl.drawArrays(gl.POINTS,0,particleCount)
 
 requestAnimationFrame(animate)
 
